@@ -70,7 +70,29 @@ c10::SymNode SingletonSymNodeImpl::mul(const c10::SymNode& other) {
   }
   c10::optional<int64_t> c = other->constant_int();
   TORCH_CHECK(c.has_value());
-  return SymNode(c10::make_intrusive<SingletonSymNodeImpl>(val_, coeff_ * *c));
+  return SymNode(c10::make_intrusive<SingletonSymNodeImpl>(val_, coeff_ * *c, values_, dummy_, sum_offsets_));
+}
+
+std::optional<at::Tensor> try_call_with_dummy(const std::function<at::Tensor(at::Tensor)>& fn, c10::SymIntArrayRef size) {
+  at::TensorImpl* ptr = nullptr;
+  for (const auto& s : size) {
+    if (!s.is_heap_allocated()) {
+      continue;
+    }
+    auto _ptr = reinterpret_cast<at::TensorImpl*>(s.toSymNode()->singleton_dummy());
+    if (_ptr != nullptr) {
+      TORCH_CHECK(ptr == nullptr, "Only one singleton dimension supported");
+      ptr = _ptr;
+    }
+  }
+  if (ptr != nullptr) {
+    auto p = c10::intrusive_ptr<at::TensorImpl>(ptr, c10::raw::DontIncreaseRefcount{});
+    auto dummy = at::Tensor(p);
+    auto ret = fn(dummy);
+    dummy.unsafeReleaseTensorImpl();
+    return ret;
+  }
+  return std::nullopt;  // Return std::nullopt if no singleton dimension is found
 }
 
 } // namespace c10

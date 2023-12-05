@@ -880,3 +880,38 @@ def embedding_default(func, *args, **kwargs):
     return NestedTensor(
         func(weight, indices._values, **new_kwargs), **extract_kwargs(indices)
     )
+
+def get_factory_from_new_factory(aten_op):
+    factory_map = {
+        torch.ops.aten.new_zeros.default: torch.zeros,
+        torch.ops.aten.new_empty.default: torch.empty,
+        torch.ops.aten.new_full.default: torch.full,
+        torch.ops.aten.new_ones.default: torch.ones,
+    }
+    return factory_map.get(aten_op, None)
+
+# Note [ NestedTensor factory functions ]
+#
+# new_* functions are used to implement the factory functions for NestedTensor
+def jagged_new_factory(func, *args, **kwargs):
+    _, new_kwargs = normalize_function(
+        func, args=args, kwargs=kwargs, normalize_to_only_use_kwargs=True
+    )
+    new_kwargs.pop("input")
+    # TODO: don't assume that the ragged_idx == 1
+    _unused_B, singleton, *Ds = new_kwargs.pop("size")
+    offsets = singleton.node.singleton_values()
+    sum_offsets = singleton.node.singleton_sum_offsets()
+    factory_fn = get_factory_from_new_factory(func)
+
+    return NestedTensor(factory_fn([sum_offsets, *Ds], **new_kwargs), offsets)
+
+register_jagged_func(
+    [
+       torch.ops.aten.new_zeros.default,
+       torch.ops.aten.new_empty.default,
+       torch.ops.aten.new_full.default,
+       torch.ops.aten.new_ones.default,
+    ],
+    "self: jt, size: any, dtype: any?, layout: any?, device: any?, pin_memory: any?",
+)(jagged_new_factory)
