@@ -2097,6 +2097,7 @@ class GraphModule(torch.nn.Module):
             """{'add': ['map', 'map', 'add'], 'cos': ['map', 'cos'], 'sin': ['sin']}""",
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_source_fn_stack(self):
         backend = EagerAndRecordGraphs()
 
@@ -2119,6 +2120,7 @@ class GraphModule(torch.nn.Module):
  'sum_1': ['grad_impl', 'grad_impl', 'sum_1']}""",
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_source_fn_stack(self):
         backend = EagerAndRecordGraphs()
 
@@ -2231,13 +2233,6 @@ def forward(self, L_pred_ : torch.Tensor, L_pytree_in_0_ : torch.Tensor, L_pytre
 
 
 class FuncTorchHigherOrderOpTests(torch._dynamo.test_case.TestCase):
-    def run(self, result=None):
-        # capture_func_transform will be set to False (for 2.1) till we
-        # support all transforms, so manually patch it to `True`` for
-        # testing on release branch.
-        with config.patch(capture_func_transforms=True):
-            super().run(result)
-
     def _compile_check(self, fn, inputs, fullgraph=True, graph_idx=0):
         backend = EagerAndRecordGraphs()
         actual = fn(*inputs)
@@ -2248,6 +2243,7 @@ class FuncTorchHigherOrderOpTests(torch._dynamo.test_case.TestCase):
         wrapped_gm = backend.graphs[graph_idx]
         return wrapped_gm
 
+    @config.patch(capture_func_transforms=True)
     def test_grad(self):
         counters.clear()
 
@@ -2286,6 +2282,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_freevar_tensor(self):
         counters.clear()
         y = torch.randn(3, 3)
@@ -2301,6 +2298,7 @@ class GraphModule(torch.nn.Module):
         actual = torch.compile(wrapper_fn, backend="aot_eager", fullgraph=True)(x)
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_freevar_python_scalar(self):
         counters.clear()
         y = 3
@@ -2341,6 +2339,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_capture_tensor(self):
         counters.clear()
 
@@ -2385,6 +2384,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_closure_scalar(self):
         counters.clear()
 
@@ -2429,6 +2429,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_has_aux(self):
         counters.clear()
 
@@ -2473,6 +2474,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_two_tensor_has_aux(self):
         counters.clear()
 
@@ -2517,6 +2519,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_two_tensor_all_grad_has_aux(self):
         counters.clear()
 
@@ -2603,6 +2606,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_over_grad(self):
         counters.clear()
 
@@ -2648,6 +2652,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_with_graph_break(self):
         counters.clear()
 
@@ -2664,6 +2669,7 @@ class GraphModule(torch.nn.Module):
         self.assertEqual(len(counters["graph_break"]), 1)
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_with_side_effect(self):
         counters.clear()
 
@@ -2689,6 +2695,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_pytree(self):
         counters.clear()
 
@@ -2713,6 +2720,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_non_tensor_input(self):
         counters.clear()
 
@@ -2753,6 +2761,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_disable_capture(self):
         counters.clear()
 
@@ -2780,6 +2789,7 @@ class GraphModule(torch.nn.Module):
             )
             self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_grad_fn_with_kwargs(self):
         def fn(x, y):
             return (x + y).sum()
@@ -2798,6 +2808,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap(self):
         def fn(x):
             return torch.func.vmap(lambda x: x.sum(0) + x.sum(1))(x)
@@ -2834,6 +2845,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_free_const(self):
         y = 3
 
@@ -2873,6 +2885,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_free_tensor(self):
         y = torch.randn(3, 3)
 
@@ -2913,6 +2926,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_two_inputs(self):
         def fn(x, y):
             return torch.func.vmap(
@@ -2955,6 +2969,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_two_inputs_tuple_in_dims(self):
         in_dims = (0, 1)
 
@@ -2999,6 +3014,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_over_vmap_two_inputs(self):
         def fn(x, y):
             return torch.func.vmap(torch.func.vmap(lambda x, y: x + y, in_dims=1))(x, y)
@@ -3046,6 +3062,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_over_vmap_captured(self):
         x = torch.ones(2, 3)
         y = torch.ones(5, 3)
@@ -3092,6 +3109,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_multiple_outputs(self):
         x = torch.ones(2, 4, 3)
 
@@ -3130,6 +3148,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_multiple_outputs_diff_dims(self):
         x = torch.ones(2, 4, 3)
 
@@ -3168,6 +3187,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_multiple_outputs_out_dims_tuple(self):
         x = torch.ones(2, 4, 3)
         out_dims = (1, 0)
@@ -3207,6 +3227,7 @@ class GraphModule(torch.nn.Module):
 """,
         )
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_kwargs(self):
         counters.clear()
         x = torch.ones(2, 3)
@@ -3224,6 +3245,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_pytree_inputs(self):
         counters.clear()
         x = torch.ones(2, 3)
@@ -3250,6 +3272,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_side_effects(self):
         counters.clear()
         x = torch.ones(2, 3)
@@ -3276,6 +3299,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_disable_capture(self):
         counters.clear()
 
@@ -3300,6 +3324,7 @@ class GraphModule(torch.nn.Module):
             )
             self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_illegal_op_graph_break(self):
         counters.clear()
 
@@ -3321,6 +3346,7 @@ class GraphModule(torch.nn.Module):
         )
         self.assertEqual(actual, expected)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_multiple_invocation_in_dims(self):
         counters.clear()
 
@@ -3337,6 +3363,7 @@ class GraphModule(torch.nn.Module):
         self.assertEqual(cnt.frame_count, 3)
         self.assertEqual(cnt.op_count, 9)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_multiple_invocation_out_dims(self):
         counters.clear()
 
@@ -3353,6 +3380,7 @@ class GraphModule(torch.nn.Module):
         self.assertEqual(cnt.frame_count, 3)
         self.assertEqual(cnt.op_count, 9)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_new_tensor_in_body(self):
         def fn(x):
             return x + torch.ones(3)
@@ -3368,6 +3396,7 @@ class GraphModule(torch.nn.Module):
         actual = opt(x)
         self.assertEqual(expected, actual)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_new_tensor_unused_in_body(self):
         def fn(x):
             return torch.tensor(0.5)
@@ -3381,6 +3410,7 @@ class GraphModule(torch.nn.Module):
         actual = opt(x)
         self.assertEqual(expected, actual)
 
+    @config.patch(capture_func_transforms=True)
     def test_vmap_new_tensor_implicit_via_op(self):
         def wrapper_fn(x):
             return torch.func.vmap(lambda t: torch.add(t, 0.5))(x)
