@@ -1085,8 +1085,10 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         counters["stats"]["unique_graphs"] += 1
         self.install_global(name, compiled_fn)
 
+        # breakpoint()
         cg = PyCodegen(tx)
         cg.make_call_generated_code(name)
+        # breakpoint()
         return cg.get_instructions()
 
     @property
@@ -1129,6 +1131,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                 else ""
             )
             _step_logger()(logging.INFO, f"calling compiler function {name}")
+            # breakpoint()
             compiler_fn = self.compiler_fn
             if config.verify_correctness:
                 compiler_fn = WrapperBackend(compiler_fn)
