@@ -216,27 +216,8 @@ def capture_pre_autograd_graph(
         )
         unlifted_m.train = types.MethodType(_train, m)  # type: ignore[method-assign]
         unlifted_m.eval = types.MethodType(_eval, m)  # type: ignore[method-assign]
+
         return unlifted_m
-
-
-def _export_to_torch_ir(
-    f: Callable,
-    args: Tuple[Any, ...],
-    kwargs: Optional[Dict[str, Any]] = None,
-    constraints: Optional[List[Constraint]] = None,
-    *,
-    preserve_module_call_signature: Tuple[str, ...] = (),
-    disable_constraint_solver: bool = False,
-) -> torch.fx.GraphModule:
-    from torch.export._trace import _export_to_torch_ir
-    return _export_to_torch_ir(
-        f,
-        args,
-        kwargs,
-        constraints,
-        preserve_module_call_signature=preserve_module_call_signature,
-        disable_constraint_solver=disable_constraint_solver
-    )
 
 
 def export(
@@ -512,6 +493,7 @@ def aot_compile(
         )
 
     from torch._inductor.decomposition import select_decomp_table
+    from torch.export._trace import _export_to_torch_ir
 
     if constraints is None:
         constraints = _process_dynamic_shapes(f, args, kwargs, dynamic_shapes)
