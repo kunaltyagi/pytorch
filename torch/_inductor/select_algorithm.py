@@ -3,13 +3,14 @@ import functools
 import inspect
 import itertools
 import logging
+import math
 import sys
 import textwrap
 import time
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Type, Union
 from unittest.mock import patch
 
 import sympy
@@ -432,7 +433,7 @@ class TritonTemplate(KernelTemplate):
         suffix_args=0,
         epilogue_fn=identity,
         **kwargs,
-    ):
+    ) -> Generator[ChoiceCaller, None, None]:
         assert self.template, "requires jinja2"
         defines = StringIO()
         for name, val in kwargs.items():
@@ -541,7 +542,7 @@ class TritonTemplate(KernelTemplate):
             output_tensor_meta=TensorMeta.from_irnodes(layout),
         )
 
-        return TritonTemplateCaller(
+        yield TritonTemplateCaller(
             kernel_hash_name,
             input_nodes,
             layout,
@@ -748,6 +749,8 @@ class ErrorFromChoice(RuntimeError):
         super().__init__(msg)
         self.choice = choice
 
+class NoValidChoicesError(RuntimeError):
+    pass
 
 class AlgorithmSelectorCache(PersistentCache):
     def __call__(
@@ -831,7 +834,12 @@ class AlgorithmSelectorCache(PersistentCache):
             or log.getEffectiveLevel() == logging.DEBUG
         ):
             self.log_results(name, input_nodes, timings, autotune_elapse)
-        selected_choice = builtins.min(timings, key=timings.__getitem__).output_node()
+
+        selected_key = builtins.min(timings, key=timings.__getitem__)
+        selected_time = timings[selected_key]
+        if (not isinstance(selected_time, float)) or (selected_time<0.0) or (not math.isfinite(selected_time)) or math.isnan(selected_time):
+            raise NoValidChoicesError()
+        selected_choice = selected_key.output_node()
         log.debug("selected choice: %s", str(selected_choice))
         return selected_choice
 
