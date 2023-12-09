@@ -1220,6 +1220,7 @@ def jinja2_env():
     except ImportError:
         return None
 
+PrimitiveInfoType = Union[int, float, bool, str]
 
 class ChoiceCaller:
     """
@@ -1251,6 +1252,10 @@ class ChoiceCaller:
 
     def output_node(self) -> "TensorBox":  # type: ignore[name-defined]
         raise NotImplementedError()
+
+    def info_dict(self) -> Dict[str, PrimitiveInfoType]:
+        """Information returned here is logged to the autotune log file when that is enabled."""
+        return {}
 
 
 class KernelTemplate:
