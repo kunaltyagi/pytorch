@@ -8,6 +8,7 @@
 #include <torch/csrc/utils/pythoncapi_compat.h>
 #include <iostream>
 #include <vector>
+#include <ATen/SparseCsrTensorUtils.h>
 
 /*
 [Note: Compiled Autograd]
@@ -425,6 +426,7 @@ variable_list compiled_autograd(
 
       saved.debug_asserts();
       saved.before(call.node->next_edges());
+
       validate_outputs(
           call.node->next_edges(), outputs, [&](const std::string& msg) {
             std::ostringstream ss;
